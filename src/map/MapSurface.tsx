@@ -314,7 +314,9 @@ function GoogleMap({
         pitch,
         zoom: zoomLevel,
       }}
-      loadingEnabled
+      // Show tiles as they arrive. Android's loading overlay waits for the
+      // entire map to load and can obscure usable tiles on slow connections.
+      loadingEnabled={false}
       onLayout={handleLayout}
       onMapReady={() => setIsMapReady(true)}
       onRegionChangeComplete={(region) => {
