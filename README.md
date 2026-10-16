@@ -7,7 +7,11 @@ Shared theme, base components and map for the Tow Now customer
 
 - `theme`, `typography`: the palette, spacing, radii, shadows and text styles from Figma.
 - Components: `Button`, `TextField`, `IconButton`, `ListRow`, `BackArrowIcon`,
-  `ScreenHeader`, `BottomSheet`, `ChoiceChip`.
+  `ScreenHeader`, `BottomSheet`, `ChoiceChip`, `Avatar`, `CircleAction`.
+- Icons drawn from Figma: `MenuIcon`, `CloseIcon`, `ChatIcon`, `PhoneIcon`,
+  `SearchIcon`, `PlaceIcon`, `CrosshairIcon`, `RouteGlyph`, `MapLinkIcon`,
+  `ChevronRightIcon`, `CheckIcon`, `AddIcon`; payment marks `CardBrandMark`,
+  `CashMark`, `PaymentMethodMark`.
 - Map: `MapSurface` (Google Maps with the Figma pins, brand-colour route and
   the cab-anchored truck marker), marker components and the map-fit helpers.
 - Formatting: `formatPLN`, `formatDistanceKm`, `formatDurationMinutes`,
