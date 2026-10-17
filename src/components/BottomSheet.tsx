@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import {
   Animated,
   PanResponder,
-  Pressable,
   StyleSheet,
   View,
   type LayoutChangeEvent,
@@ -13,7 +12,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { uiText } from "../i18n";
 import { colors, radius, screen, shadow, spacing } from "../theme";
-import { isSheetDrag, sheetDragOffset, sheetExpandedAfterDrag } from "./sheetSnap";
+import {
+  isSheetDrag,
+  SHEET_DRAG_SLOP,
+  sheetDragOffset,
+  sheetExpandedAfterDrag,
+} from "./sheetSnap";
 
 export type BottomSheetProps = {
   children: ReactNode;
@@ -116,11 +120,22 @@ function SheetFrame({
       }).start();
 
     return PanResponder.create({
+      // The handle owns every touch that starts on it: a short touch is a tap
+      // (toggle), a vertical move is a drag. Pressable can't be used here, as it
+      // overrides the responder move/release handlers.
+      onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_event, gesture) => isSheetDrag(gesture.dx, gesture.dy),
+      onPanResponderTerminationRequest: () => false,
       onPanResponderMove: (_event, gesture) => {
         offset.setValue(sheetDragOffset(gesture.dy, expandedRef.current));
       },
       onPanResponderRelease: (_event, gesture) => {
+        if (!isSheetDrag(gesture.dx, gesture.dy) && Math.abs(gesture.dx) <= SHEET_DRAG_SLOP) {
+          onChangeRef.current?.(!expandedRef.current);
+          settle();
+          return;
+        }
+
         const next = sheetExpandedAfterDrag(gesture.dy, gesture.vy, expandedRef.current);
 
         if (next !== expandedRef.current) {
@@ -146,20 +161,22 @@ function SheetFrame({
 
   return (
     <Animated.View onLayout={onLayout} style={[sheetStyle, { transform: [{ translateY: offset }] }]}>
-      <Pressable
+      <View
         {...panResponder.panHandlers}
+        accessibilityActions={[{ name: "activate" }]}
         accessibilityLabel={
           handleAccessibilityLabel ?? uiText(expanded ? "sheetCollapse" : "sheetExpand")
         }
         accessibilityRole="button"
         accessibilityState={{ expanded }}
         hitSlop={{ bottom: spacing.sm, left: 0, right: 0, top: spacing.sm }}
-        onPress={() => onExpandedChange?.(!expanded)}
+        accessible
+        onAccessibilityAction={() => onExpandedChange?.(!expanded)}
         style={styles.handleArea}
         testID="bottom-sheet-handle"
       >
         {showHandle ? <View style={styles.handleBar} /> : null}
-      </Pressable>
+      </View>
       {children}
     </Animated.View>
   );
