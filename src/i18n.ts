@@ -12,6 +12,8 @@ const messages = {
     mapRouteSeparator: "to",
     mapServiceArea: "Krakow tow area",
     mapUnavailable: "Google Maps is unavailable in this build.",
+    sheetCollapse: "Hide details",
+    sheetExpand: "Show details",
   },
   pl: {
     back: "Wstecz",
@@ -24,6 +26,8 @@ const messages = {
     mapRouteSeparator: "do",
     mapServiceArea: "Obszar holowania w Krakowie",
     mapUnavailable: "Google Maps jest niedostępne w tej wersji aplikacji.",
+    sheetCollapse: "Ukryj szczegóły",
+    sheetExpand: "Pokaż szczegóły",
   },
 } satisfies Record<UiLocale, Record<string, string>>;
 
