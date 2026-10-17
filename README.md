@@ -8,6 +8,10 @@ Shared theme, base components and map for the Tow Now customer
 - `theme`, `typography`: the palette, spacing, radii, shadows and text styles from Figma.
 - Components: `Button`, `TextField`, `IconButton`, `ListRow`, `BackArrowIcon`,
   `ScreenHeader`, `BottomSheet`, `ChoiceChip`, `Avatar`, `CircleAction`.
+- `BottomSheet` is static by default. Pass `expanded` and `onExpandedChange`
+  (and optionally `compactContent`) to make it collapsible: a tap on the
+  handle toggles it, a vertical drag on the handle snaps it compact or
+  expanded. The handle is a button labelled "Show details" / "Hide details".
 - Icons drawn from Figma: `MenuIcon`, `CloseIcon`, `ChatIcon`, `PhoneIcon`,
   `SearchIcon`, `PlaceIcon`, `CrosshairIcon`, `RouteGlyph`, `MapLinkIcon`,
   `ChevronRightIcon`, `CheckIcon`, `AddIcon`; payment marks `CardBrandMark`,
