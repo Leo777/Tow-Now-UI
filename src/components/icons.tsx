@@ -7,6 +7,7 @@ import {
 } from "react-native";
 
 import { colors, radius, spacing } from "../theme";
+import { CHECK_POINTS, CHEVRON_POINTS, strokeStyle, type Point } from "./iconGeometry";
 
 // Glyphs drawn with Views, as in the Figma files. Each takes `style` for
 // placement; sizes are the Figma sizes.
@@ -133,19 +134,28 @@ export function MapLinkIcon({ style }: Pick<IconProps, "style">) {
 
 /** Row disclosure arrow. */
 export function ChevronRightIcon({ color = colors.text.muted, style }: IconProps) {
-  return (
-    <View style={[styles.chevronIcon, style]}>
-      <View style={[styles.chevronTop, { backgroundColor: color }]} />
-      <View style={[styles.chevronBottom, { backgroundColor: color }]} />
-    </View>
-  );
+  return <Polyline color={color} points={CHEVRON_POINTS} style={style} />;
 }
 
 export function CheckIcon({ color = colors.text.primary, style }: IconProps) {
+  return <Polyline color={color} points={CHECK_POINTS} style={style} />;
+}
+
+/** Connected strokes in a 24 × 24 box; the joints meet at shared points. */
+function Polyline({
+  color,
+  points,
+  style,
+}: {
+  color: string;
+  points: readonly Point[];
+  style?: StyleProp<ViewStyle>;
+}) {
   return (
-    <View style={[styles.checkIcon, style]}>
-      <View style={[styles.checkShort, { backgroundColor: color }]} />
-      <View style={[styles.checkLong, { backgroundColor: color }]} />
+    <View style={[styles.polyline, style]}>
+      {points.slice(1).map((to, index) => (
+        <View key={index} style={[strokeStyle(points[index]!, to), { backgroundColor: color }]} />
+      ))}
     </View>
   );
 }
@@ -214,41 +224,6 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "-25deg" }],
     width: 9,
   },
-  checkIcon: {
-    height: 24,
-    justifyContent: "center",
-    width: 24,
-  },
-  checkLong: {
-    borderRadius: radius.pill,
-    height: 2,
-    transform: [{ rotate: "-45deg" }, { translateX: 2 }],
-    width: 14,
-  },
-  checkShort: {
-    borderRadius: radius.pill,
-    height: 2,
-    transform: [{ rotate: "45deg" }, { translateX: -4 }, { translateY: 4 }],
-    width: 8,
-  },
-  chevronBottom: {
-    borderRadius: radius.pill,
-    height: 2,
-    transform: [{ rotate: "-45deg" }, { translateX: -3 }],
-    width: 10,
-  },
-  chevronIcon: {
-    height: 24,
-    justifyContent: "center",
-    width: 24,
-  },
-  chevronTop: {
-    borderRadius: radius.pill,
-    height: 2,
-    marginBottom: spacing.xs,
-    transform: [{ rotate: "45deg" }, { translateX: -3 }],
-    width: 10,
-  },
   closeIcon: {
     justifyContent: "center",
   },
@@ -315,6 +290,10 @@ const styles = StyleSheet.create({
     width: 11,
   },
   phoneGlyph: {
+    height: 24,
+    width: 24,
+  },
+  polyline: {
     height: 24,
     width: 24,
   },
