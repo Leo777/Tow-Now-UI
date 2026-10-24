@@ -24,7 +24,7 @@ import {
 
 const fallbackMapImage = require("../../assets/map/arriving-map.png");
 const truckTopImage = require("../../assets/map/truck-top.png");
-// Density-qualified 24 × 46 image: native markers do not accept Image styles.
+// Density-qualified 30 × 58 image: native markers do not accept Image styles.
 const truckMarkerImage = require("../../assets/map/truck-marker.png");
 // Density-qualified 44 × 54 pins with the shadow baked in. Native markers get
 // them through `image`, so Android never snapshots (and clips) a styled View.
@@ -32,7 +32,7 @@ const pickupPinImage = require("../../assets/map/pin-pickup.png");
 const dropoffPinImage = require("../../assets/map/pin-dropoff.png");
 // The pin tip sits at y = 45 of the 54 pt image.
 const pinAnchor = { x: 0.5, y: 45 / 54 };
-// Front axle of the 24 × 46 top-down truck (heading 0 = image pointing up).
+// Front axle of the 30 × 58 top-down truck (heading 0 = image pointing up).
 const TRUCK_CAB_ANCHOR = { x: 0.5, y: 0.22 };
 
 type ReactNativeMapsModule = typeof import("react-native-maps");
@@ -650,13 +650,13 @@ const styles = StyleSheet.create({
 
   truckMarker: {
     alignItems: "center",
-    height: 52,
+    height: 64,
     justifyContent: "center",
-    width: 40,
+    width: 46,
   },
   truckMarkerImage: {
-    height: 46,
-    width: 24,
+    height: 58,
+    width: 30,
     zIndex: 1,
   },
   truckMarkerShadow: {
@@ -664,7 +664,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     height: 4,
     marginTop: -3,
-    width: 28,
+    width: 34,
   },
   etaMarkerFrame: {
     alignItems: "center",
