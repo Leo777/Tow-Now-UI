@@ -4,6 +4,8 @@ export {
   EtaBubble,
   MapSurface,
   PickupMarker,
+  PIN_SIZE,
+  PIN_TIP,
   TowRouteOverlay,
   TruckMarker,
   type MapSurfaceProps,

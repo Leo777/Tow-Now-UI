@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type ImageStyle,
   type LayoutChangeEvent,
   type StyleProp,
   type ViewStyle,
@@ -26,12 +27,17 @@ const fallbackMapImage = require("../../assets/map/arriving-map.png");
 const truckTopImage = require("../../assets/map/truck-top.png");
 // Density-qualified 30 × 58 image: native markers do not accept Image styles.
 const truckMarkerImage = require("../../assets/map/truck-marker.png");
-// Density-qualified 44 × 54 pins with the shadow baked in. Native markers get
-// them through `image`, so Android never snapshots (and clips) a styled View.
+// Density-qualified 26 × 34 glossy pins, shadow baked in: pickup gold with a
+// dot, dropoff graphite with a chequered flag (drawn 10% smaller around the
+// same tip, so it does not look bigger than the bright pickup). Native markers
+// get them through `image`, so Android never snapshots (and clips) a styled View.
 const pickupPinImage = require("../../assets/map/pin-pickup.png");
 const dropoffPinImage = require("../../assets/map/pin-dropoff.png");
-// The pin tip sits at y = 45 of the 54 pt image.
-const pinAnchor = { x: 0.5, y: 45 / 54 };
+/** Size of the pin images in points. */
+export const PIN_SIZE = { width: 26, height: 34 } as const;
+/** The pin tip, in points from the image's top-left: the point it marks. */
+export const PIN_TIP = { x: 13, y: 32.8 } as const;
+const pinAnchor = { x: PIN_TIP.x / PIN_SIZE.width, y: PIN_TIP.y / PIN_SIZE.height };
 // Front axle of the 30 × 58 top-down truck (heading 0 = image pointing up).
 const TRUCK_CAB_ANCHOR = { x: 0.5, y: 0.22 };
 
@@ -102,25 +108,29 @@ function getFallbackReason(loadState: LoadState) {
   }
 }
 
-export function PickupMarker() {
+/** The pickup pin; `style` can draw it smaller, e.g. as a list icon. */
+export function PickupMarker({ style }: { style?: StyleProp<ImageStyle> }) {
   return (
     <Image
       accessibilityElementsHidden
       importantForAccessibility="no"
+      resizeMode="contain"
       source={pickupPinImage}
-      style={styles.pin}
+      style={[styles.pin, style]}
       testID="map-pin-pickup"
     />
   );
 }
 
-export function DropoffMarker() {
+/** The dropoff pin; `style` can draw it smaller, e.g. as a list icon. */
+export function DropoffMarker({ style }: { style?: StyleProp<ImageStyle> }) {
   return (
     <Image
       accessibilityElementsHidden
       importantForAccessibility="no"
+      resizeMode="contain"
       source={dropoffPinImage}
-      style={styles.pin}
+      style={[styles.pin, style]}
       testID="map-pin-dropoff"
     />
   );
@@ -644,8 +654,8 @@ const styles = StyleSheet.create({
     width: 18,
   },
   pin: {
-    height: 54,
-    width: 44,
+    height: PIN_SIZE.height,
+    width: PIN_SIZE.width,
   },
 
   truckMarker: {
