@@ -8,6 +8,7 @@ export {
   PIN_TIP,
   TowRouteOverlay,
   TruckMarker,
+  type MapLocate,
   type MapSurfaceProps,
 } from "./MapSurface";
 export { hasGoogleMapsPlatformApiKey } from "./googleMaps";
