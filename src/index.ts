@@ -11,6 +11,7 @@ export {
   ChevronRightIcon,
   CloseIcon,
   CrosshairIcon,
+  LocateIcon,
   MapLinkIcon,
   MenuIcon,
   PhoneIcon,

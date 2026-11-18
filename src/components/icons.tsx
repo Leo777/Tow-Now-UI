@@ -2,6 +2,7 @@ import {
   Image,
   StyleSheet,
   View,
+  type ImageStyle,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
@@ -95,6 +96,21 @@ export function PlaceIcon({
     <View style={[styles.placeIcon, selected ? styles.placeIconSelected : null, style]}>
       <View style={styles.placeIconHole} />
     </View>
+  );
+}
+
+const locateImage = require("../../assets/icons/locate.png");
+
+/** "Where am I": the floating pin over a gold ring, 30 × 30. */
+export function LocateIcon({ style }: { style?: StyleProp<ImageStyle> }) {
+  return (
+    <Image
+      accessibilityElementsHidden
+      importantForAccessibility="no"
+      resizeMode="contain"
+      source={locateImage}
+      style={[styles.locateIcon, style]}
+    />
   );
 }
 
@@ -260,6 +276,10 @@ const styles = StyleSheet.create({
     height: 24,
     position: "absolute",
     width: 2,
+  },
+  locateIcon: {
+    height: 30,
+    width: 30,
   },
   mapLinkDot: {
     backgroundColor: colors.brand.primary,

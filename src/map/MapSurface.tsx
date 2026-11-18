@@ -11,10 +11,12 @@ import {
   type ViewStyle,
 } from "react-native";
 
+import { IconButton } from "../components/IconButton";
+import { LocateIcon } from "../components/icons";
 import { formatDurationMinutes } from "../format";
 import type { Coordinates, MapPlace } from "../geo";
 import { uiText } from "../i18n";
-import { colors, radius, shadow, spacing } from "../theme";
+import { colors, radius, screen, shadow, spacing } from "../theme";
 import { typography } from "../typography";
 import { hasGoogleMapsPlatformApiKey } from "./googleMaps";
 import {
@@ -70,6 +72,17 @@ export type MapSurfaceProps = {
   showFallbackTracking?: boolean;
   /** False replaces all illustrative fallback geometry with a localized message. */
   showIllustrativeFallback?: boolean;
+  /**
+   * A "show my location" button at the bottom right, `bottom` points up from
+   * the map's bottom edge (above the screen's sheet). Tapping it asks the app
+   * for the phone's position, moves the camera there and shows the blue dot.
+   */
+  locate?: MapLocate | null;
+};
+
+export type MapLocate = {
+  bottom: number;
+  getLocation: () => Promise<Coordinates>;
 };
 
 type GoogleMarkerProps = {
@@ -89,6 +102,12 @@ function toLatLng(coordinates: Coordinates) {
     latitude: coordinates.latitude,
     longitude: coordinates.longitude,
   };
+}
+
+/** Degrees of latitude covered by `points` screen points at a Web Mercator zoom. */
+function latitudeForPoints(points: number, latitude: number, zoom: number) {
+  const metersPerPoint = (156543.03 * Math.cos((latitude * Math.PI) / 180)) / 2 ** zoom;
+  return (points * metersPerPoint) / 111_320;
 }
 
 function getFallbackReason(loadState: LoadState) {
@@ -258,6 +277,7 @@ function GoogleMap({
   fitPadding,
   etaMinutes,
   onCameraSettled,
+  locate,
   maps,
 }: Required<Pick<MapSurfaceProps, "center" | "zoomLevel" | "pitch">> &
   Omit<
@@ -276,6 +296,8 @@ function GoogleMap({
   const mapFitState = useRef(initialMapFitState);
   const [isMapReady, setIsMapReady] = useState(false);
   const [layoutSize, setLayoutSize] = useState({ width: 0, height: 0 });
+  const [isLocating, setIsLocating] = useState(false);
+  const [hasLocated, setHasLocated] = useState(false);
   const fitSignature = createMapFitSignature(fitCoordinates, fitPadding);
 
   useEffect(() => {
@@ -304,91 +326,131 @@ function GoogleMap({
     );
   };
 
+  // A new camera object makes the native map jump back to it, so it changes
+  // only with the centre: a re-render (the locate button's spinner, a parent
+  // update) must not undo the user's panning or the locate animation.
+  const camera = useMemo(
+    () =>
+      fitSignature
+        ? undefined
+        : {
+            altitude: 0,
+            center: { latitude: center.latitude, longitude: center.longitude },
+            heading: 0,
+            pitch,
+            zoom: zoomLevel,
+          },
+    [center.latitude, center.longitude, fitSignature, pitch, zoomLevel],
+  );
+
+  async function showMyLocation() {
+    if (!locate || isLocating) return;
+    setIsLocating(true);
+    try {
+      const location = await locate.getLocation();
+      setHasLocated(true);
+      const zoom = (await mapRef.current?.getCamera())?.zoom ?? zoomLevel;
+      // The sheet covers the bottom of the map: put the dot in the middle of
+      // the strip above it, not behind the sheet.
+      const center = {
+        latitude: location.latitude - latitudeForPoints(locate.bottom / 2, location.latitude, zoom),
+        longitude: location.longitude,
+      };
+      mapRef.current?.animateCamera({ center: toLatLng(center) }, { duration: 400 });
+    } catch {
+      // No permission or no fix: the map stays where it is.
+    } finally {
+      setIsLocating(false);
+    }
+  }
+
   return (
-    <MapView
-      camera={
-        fitSignature
-          ? undefined
-          : {
-              altitude: 0,
-              center: toLatLng(center),
-              heading: 0,
-              pitch,
-              zoom: zoomLevel,
-            }
-      }
-      initialCamera={{
-        altitude: 0,
-        center: toLatLng(center),
-        heading: 0,
-        pitch,
-        zoom: zoomLevel,
-      }}
-      // Show tiles as they arrive. Android's loading overlay waits for the
-      // entire map to load and can obscure usable tiles on slow connections.
-      loadingEnabled={false}
-      onLayout={handleLayout}
-      onMapReady={() => setIsMapReady(true)}
-      onRegionChangeComplete={(region) => {
-        onCameraSettled?.({
-          latitude: region.latitude,
-          longitude: region.longitude,
-        });
-      }}
-      provider={provider}
-      ref={mapRef}
-      rotateEnabled={false}
-      showsCompass={false}
-      showsMyLocationButton={false}
-      showsUserLocation={Boolean(currentLocation)}
-      style={StyleSheet.absoluteFill}
-      toolbarEnabled={false}
-    >
-      <TowRouteOverlay maps={maps} routeCoordinates={routeCoordinates ?? []} />
-      {/* Pins are native marker icons; see PinMarker for the per-OS prop. */}
-      {pickup?.coordinates ? (
-        <PinMarker
-          coordinate={pickup.coordinates}
-          maps={maps}
-          variant="pickup"
+    <>
+      <MapView
+        camera={camera}
+        initialCamera={{
+          altitude: 0,
+          center: toLatLng(center),
+          heading: 0,
+          pitch,
+          zoom: zoomLevel,
+        }}
+        // Show tiles as they arrive. Android's loading overlay waits for the
+        // entire map to load and can obscure usable tiles on slow connections.
+        loadingEnabled={false}
+        onLayout={handleLayout}
+        onMapReady={() => setIsMapReady(true)}
+        onRegionChangeComplete={(region) => {
+          onCameraSettled?.({
+            latitude: region.latitude,
+            longitude: region.longitude,
+          });
+        }}
+        provider={provider}
+        ref={mapRef}
+        rotateEnabled={false}
+        showsCompass={false}
+        showsMyLocationButton={false}
+        showsUserLocation={Boolean(currentLocation) || hasLocated}
+        style={StyleSheet.absoluteFill}
+        toolbarEnabled={false}
+      >
+        <TowRouteOverlay maps={maps} routeCoordinates={routeCoordinates ?? []} />
+        {/* Pins are native marker icons; see PinMarker for the per-OS prop. */}
+        {pickup?.coordinates ? (
+          <PinMarker
+            coordinate={pickup.coordinates}
+            maps={maps}
+            variant="pickup"
+          />
+        ) : null}
+        {dropoff?.coordinates ? (
+          <PinMarker
+            coordinate={dropoff.coordinates}
+            maps={maps}
+            variant="dropoff"
+          />
+        ) : null}
+        {truckCoordinate ? (
+          <Marker
+            // Pivot on the cab, not the image centre: the trimmed route starts at
+            // this point, so a centred anchor hid the road ahead under the body
+            // and swung the rear across buildings at corners.
+            anchor={TRUCK_CAB_ANCHOR}
+            coordinate={toLatLng(truckCoordinate)}
+            flat
+            image={truckMarkerImage}
+            rotation={truckHeadingDegrees}
+            zIndex={2}
+          />
+        ) : null}
+        {typeof etaMinutes === "number" ? (
+          <GoogleMarker
+            // Remount on change so Android re-measures the marker bitmap.
+            key={`eta-${Math.round(etaMinutes)}`}
+            maps={maps}
+            coordinate={truckCoordinate}
+            anchor={{ x: 0.5, y: 1.6 }}
+          >
+            {/* Fixed-size, padded frame: Android sizes the marker snapshot from
+                the first layout, which clipped the label and its shadow. */}
+            <View collapsable={false} style={styles.etaMarkerFrame}>
+              <EtaBubble minutes={etaMinutes} />
+            </View>
+          </GoogleMarker>
+        ) : null}
+      </MapView>
+      {locate ? (
+        <IconButton
+          accessibilityLabel={uiText("mapLocate")}
+          disabled={isLocating}
+          icon={<LocateIcon />}
+          onPress={() => void showMyLocation()}
+          style={[styles.locateButton, { bottom: locate.bottom }]}
+          testID="map-locate"
         />
       ) : null}
-      {dropoff?.coordinates ? (
-        <PinMarker
-          coordinate={dropoff.coordinates}
-          maps={maps}
-          variant="dropoff"
-        />
-      ) : null}
-      {truckCoordinate ? (
-        <Marker
-          // Pivot on the cab, not the image centre: the trimmed route starts at
-          // this point, so a centred anchor hid the road ahead under the body
-          // and swung the rear across buildings at corners.
-          anchor={TRUCK_CAB_ANCHOR}
-          coordinate={toLatLng(truckCoordinate)}
-          flat
-          image={truckMarkerImage}
-          rotation={truckHeadingDegrees}
-          zIndex={2}
-        />
-      ) : null}
-      {typeof etaMinutes === "number" ? (
-        <GoogleMarker
-          // Remount on change so Android re-measures the marker bitmap.
-          key={`eta-${Math.round(etaMinutes)}`}
-          maps={maps}
-          coordinate={truckCoordinate}
-          anchor={{ x: 0.5, y: 1.6 }}
-        >
-          {/* Fixed-size, padded frame: Android sizes the marker snapshot from
-              the first layout, which clipped the label and its shadow. */}
-          <View collapsable={false} style={styles.etaMarkerFrame}>
-            <EtaBubble minutes={etaMinutes} />
-          </View>
-        </GoogleMarker>
-      ) : null}
-    </MapView>
+    </>
   );
 }
 
@@ -484,6 +546,7 @@ export function MapSurface({
   fitPadding,
   etaMinutes = null,
   onCameraSettled,
+  locate = null,
   showFallbackCard = true,
   showFallbackReason = true,
   showFallbackTracking = true,
@@ -540,6 +603,7 @@ export function MapSurface({
       {loadState.status === "ready" ? (
         <GoogleMap
           center={center}
+          locate={locate}
           currentLocation={currentLocation}
           dropoff={dropoff}
           etaMinutes={etaMinutes}
@@ -652,6 +716,11 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     height: 18,
     width: 18,
+  },
+  locateButton: {
+    position: "absolute",
+    right: screen.horizontalPadding,
+    ...shadow.card,
   },
   pin: {
     height: PIN_SIZE.height,

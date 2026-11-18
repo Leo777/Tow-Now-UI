@@ -17,7 +17,8 @@ Shared theme, base components and map for the Tow Now customer
   `ChevronRightIcon`, `CheckIcon`, `AddIcon`; payment marks `CardBrandMark`,
   `CashMark`, `PaymentMethodMark`.
 - Map: `MapSurface` (Google Maps with the glossy pickup and dropoff pins, brand-colour route and
-  the cab-anchored truck marker), marker components (`PIN_SIZE`, `PIN_TIP`) and the map-fit helpers.
+  the cab-anchored truck marker, optional "show my location" button via `locate`), marker components
+  (`PIN_SIZE`, `PIN_TIP`) and the map-fit helpers.
 - Formatting: `formatPLN`, `formatDistanceKm`, `formatDurationMinutes`,
   `formatClockTime`, `formatPolishPhone`.
 - `setUiLocale("pl" | "en")`: the language of the few strings shared
